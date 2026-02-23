@@ -22,6 +22,13 @@
         <button class="btn btn-primary mb-3" @onclick="NuevoRegistro">Nuevo Usuario</button>
     }
 
+    @* ───────── LIMITE DE REGISTROS ───────── *@
+    <div class="d-flex align-items-center mb-3">
+        <label class="form-label me-2 mb-0">Limite:</label>
+        <input class="form-control me-2" type="number" style="width:100px" @bind="limite" />
+        <button class="btn btn-outline-secondary" @onclick="CargarRegistros">Cargar</button>
+    </div>
+
     @* ───────── FORMULARIO ───────── *@
     @if (mostrarFormulario)
     {
@@ -38,6 +45,12 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Contrasena</label>
                         <input class="form-control" type="password" @bind="campoContrasena" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" id="chkEncriptar" @bind="encriptarContrasena" />
+                            <label class="form-check-label" for="chkEncriptar">Encriptar contrasena</label>
+                        </div>
                     </div>
                 </div>
                 <button class="btn btn-success me-2" @onclick="GuardarRegistro">Guardar</button>
@@ -102,6 +115,8 @@
     // Campos del formulario
     private string campoEmail = string.Empty;
     private string campoContrasena = string.Empty;
+    private bool encriptarContrasena = false;
+    private int? limite = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -111,7 +126,7 @@
     private async Task CargarRegistros()
     {
         cargando = true;
-        registros = await Api.ListarAsync("usuario");
+        registros = await Api.ListarAsync("usuario", limite);
         cargando = false;
     }
 
@@ -120,6 +135,7 @@
         editando = false;
         campoEmail = string.Empty;
         campoContrasena = string.Empty;
+        encriptarContrasena = false;
         mostrarFormulario = true;
         mensaje = string.Empty;
     }
@@ -141,16 +157,18 @@
             ["contrasena"] = campoContrasena
         };
 
+        string? encriptar = encriptarContrasena ? "contrasena" : null;
+
         if (editando)
         {
             datos.Remove("email");
-            var resultado = await Api.ActualizarAsync("usuario", "email", campoEmail, datos);
+            var resultado = await Api.ActualizarAsync("usuario", "email", campoEmail, datos, encriptar);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
         }
         else
         {
-            var resultado = await Api.CrearAsync("usuario", datos);
+            var resultado = await Api.CrearAsync("usuario", datos, encriptar);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
         }

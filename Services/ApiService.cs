@@ -27,12 +27,16 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
         // LISTAR: GET /api/{tabla}
         // Devuelve la lista de registros como diccionarios
         // ──────────────────────────────────────────────
-        public async Task<List<Dictionary<string, object?>>> ListarAsync(string tabla)
+        public async Task<List<Dictionary<string, object?>>> ListarAsync(string tabla, int? limite = null)
         {
             try
             {
                 // Hace GET a la API y obtiene la respuesta como JSON
-                var respuesta = await _http.GetFromJsonAsync<JsonElement>($"/api/{tabla}", _jsonOptions);
+                string url = $"/api/{tabla}";
+                if (limite.HasValue)
+                    url += $"?limite={limite.Value}";
+
+                var respuesta = await _http.GetFromJsonAsync<JsonElement>(url, _jsonOptions);
 
                 // Extrae la propiedad "datos" de la respuesta
                 if (respuesta.TryGetProperty("datos", out JsonElement datos))
@@ -55,11 +59,16 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
         // Devuelve (exito, mensaje) para mostrar al usuario
         // ──────────────────────────────────────────────
         public async Task<(bool exito, string mensaje)> CrearAsync(
-            string tabla, Dictionary<string, object?> datos)
+            string tabla, Dictionary<string, object?> datos,
+            string? camposEncriptar = null)
         {
             try
             {
-                var respuesta = await _http.PostAsJsonAsync($"/api/{tabla}", datos);
+                string url = $"/api/{tabla}";
+                if (!string.IsNullOrEmpty(camposEncriptar))
+                    url += $"?camposEncriptar={camposEncriptar}";
+
+                var respuesta = await _http.PostAsJsonAsync(url, datos);
                 var contenido = await respuesta.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
 
                 string mensaje = contenido.TryGetProperty("mensaje", out JsonElement msg)
@@ -80,12 +89,16 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
         // ──────────────────────────────────────────────
         public async Task<(bool exito, string mensaje)> ActualizarAsync(
             string tabla, string nombreClave, string valorClave,
-            Dictionary<string, object?> datos)
+            Dictionary<string, object?> datos,
+            string? camposEncriptar = null)
         {
             try
             {
-                var respuesta = await _http.PutAsJsonAsync(
-                    $"/api/{tabla}/{nombreClave}/{valorClave}", datos);
+                string url = $"/api/{tabla}/{nombreClave}/{valorClave}";
+                if (!string.IsNullOrEmpty(camposEncriptar))
+                    url += $"?camposEncriptar={camposEncriptar}";
+
+                var respuesta = await _http.PutAsJsonAsync(url, datos);
                 var contenido = await respuesta.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions);
 
                 string mensaje = contenido.TryGetProperty("mensaje", out JsonElement msg)
