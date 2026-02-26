@@ -139,6 +139,35 @@ namespace FrontBlazor_AppiGenericaCsharp.Services
         }
 
         // ──────────────────────────────────────────────
+        // DIAGNOSTICO: GET /api/diagnostico/conexion
+        // Devuelve info del servidor de BD conectado
+        // ──────────────────────────────────────────────
+        public async Task<Dictionary<string, string>?> ObtenerDiagnosticoAsync()
+        {
+            try
+            {
+                var respuesta = await _http.GetFromJsonAsync<JsonElement>(
+                    "/api/diagnostico/conexion", _jsonOptions);
+
+                if (respuesta.TryGetProperty("servidor", out JsonElement servidor))
+                {
+                    var info = new Dictionary<string, string>();
+                    foreach (var prop in servidor.EnumerateObject())
+                    {
+                        info[prop.Name] = prop.Value.ToString();
+                    }
+                    return info;
+                }
+
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // ──────────────────────────────────────────────
         // METODO AUXILIAR: Convierte JsonElement a lista de diccionarios
         // La API devuelve los datos como JSON generico, este metodo
         // lo transforma a Dictionary<string, object?> para trabajar
