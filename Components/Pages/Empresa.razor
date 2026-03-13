@@ -1,6 +1,7 @@
 @page "/empresa"
 @rendermode InteractiveServer
 @inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+@inject IJSRuntime JS
 
 <PageTitle>Empresas</PageTitle>
 
@@ -152,6 +153,8 @@
         if (editando)
         {
             datos.Remove("codigo");
+            var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de actualizar la Empresa '{campoCodigo}'?");
+            if (!confirmar) return;
             var resultado = await Api.ActualizarAsync("empresa", "codigo", campoCodigo, datos);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
@@ -173,6 +176,8 @@
     private async Task EliminarRegistro(Dictionary<string, object?> reg)
     {
         string codigo = reg["codigo"]?.ToString() ?? "";
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar la Empresa '{codigo}'?");
+        if (!confirmar) return;
         var resultado = await Api.EliminarAsync("empresa", "codigo", codigo);
         exito = resultado.exito;
         mensaje = resultado.mensaje;

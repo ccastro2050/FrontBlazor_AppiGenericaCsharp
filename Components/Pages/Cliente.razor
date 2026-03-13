@@ -1,6 +1,7 @@
 @page "/cliente"
 @rendermode InteractiveServer
 @inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+@inject IJSRuntime JS
 
 <PageTitle>Clientes</PageTitle>
 
@@ -202,6 +203,8 @@
 
         if (editando)
         {
+            var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de actualizar el Cliente #{campoId}?");
+            if (!confirmar) return;
             var resultado = await Api.ActualizarAsync("cliente", "id", campoId, datos);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
@@ -223,6 +226,8 @@
     private async Task EliminarRegistro(Dictionary<string, object?> reg)
     {
         string id = reg["id"]?.ToString() ?? "";
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar el Cliente #{id}?");
+        if (!confirmar) return;
         var resultado = await Api.EliminarAsync("cliente", "id", id);
         exito = resultado.exito;
         mensaje = resultado.mensaje;

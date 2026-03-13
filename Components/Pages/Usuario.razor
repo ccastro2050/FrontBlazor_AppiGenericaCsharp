@@ -1,6 +1,7 @@
 @page "/usuario"
 @rendermode InteractiveServer
 @inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+@inject IJSRuntime JS
 
 <PageTitle>Usuarios</PageTitle>
 
@@ -162,6 +163,8 @@
         if (editando)
         {
             datos.Remove("email");
+            var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de actualizar el Usuario '{campoEmail}'?");
+            if (!confirmar) return;
             var resultado = await Api.ActualizarAsync("usuario", "email", campoEmail, datos, encriptar);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
@@ -183,6 +186,8 @@
     private async Task EliminarRegistro(Dictionary<string, object?> reg)
     {
         string email = reg["email"]?.ToString() ?? "";
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar el Usuario '{email}'?");
+        if (!confirmar) return;
         var resultado = await Api.EliminarAsync("usuario", "email", email);
         exito = resultado.exito;
         mensaje = resultado.mensaje;

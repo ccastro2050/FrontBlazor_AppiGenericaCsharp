@@ -1,6 +1,7 @@
 @page "/rol"
 @rendermode InteractiveServer
 @inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+@inject IJSRuntime JS
 
 <PageTitle>Roles</PageTitle>
 
@@ -153,6 +154,8 @@
         {
             datos.Remove("id");
             // La clave es "id" y el valor se pasa como string en la URL
+            var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de actualizar el Rol #{campoId}?");
+            if (!confirmar) return;
             var resultado = await Api.ActualizarAsync("rol", "id", campoId.ToString(), datos);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
@@ -174,6 +177,8 @@
     private async Task EliminarRegistro(Dictionary<string, object?> reg)
     {
         string id = reg["id"]?.ToString() ?? "";
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar el Rol #{id}?");
+        if (!confirmar) return;
         var resultado = await Api.EliminarAsync("rol", "id", id);
         exito = resultado.exito;
         mensaje = resultado.mensaje;

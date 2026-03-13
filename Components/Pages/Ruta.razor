@@ -1,6 +1,7 @@
 @page "/ruta"
 @rendermode InteractiveServer
 @inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+@inject IJSRuntime JS
 
 <PageTitle>Rutas</PageTitle>
 
@@ -153,6 +154,8 @@
         {
             datos.Remove("ruta");
             // La clave primaria se llama "ruta" (igual que la tabla)
+            var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de actualizar la Ruta '{campoRuta}'?");
+            if (!confirmar) return;
             var resultado = await Api.ActualizarAsync("ruta", "ruta", campoRuta, datos);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
@@ -174,6 +177,8 @@
     private async Task EliminarRegistro(Dictionary<string, object?> reg)
     {
         string ruta = reg["ruta"]?.ToString() ?? "";
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar la Ruta '{ruta}'?");
+        if (!confirmar) return;
         var resultado = await Api.EliminarAsync("ruta", "ruta", ruta);
         exito = resultado.exito;
         mensaje = resultado.mensaje;

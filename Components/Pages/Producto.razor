@@ -1,6 +1,7 @@
 @page "/producto"
 @rendermode InteractiveServer
 @inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
+@inject IJSRuntime JS
 
 <PageTitle>Productos</PageTitle>
 
@@ -202,6 +203,8 @@
             // PUT /api/producto/codigo/{valor}
             // No incluimos el codigo en los datos porque es la clave
             datos.Remove("codigo");
+            var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de actualizar el Producto '{campoCodigo}'?");
+            if (!confirmar) return;
             var resultado = await Api.ActualizarAsync("producto", "codigo", campoCodigo, datos);
             exito = resultado.exito;
             mensaje = resultado.mensaje;
@@ -225,6 +228,8 @@
     private async Task EliminarRegistro(Dictionary<string, object?> reg)
     {
         string codigo = reg["codigo"]?.ToString() ?? "";
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar el Producto '{codigo}'?");
+        if (!confirmar) return;
 
         // DELETE /api/producto/codigo/{valor}
         var resultado = await Api.EliminarAsync("producto", "codigo", codigo);

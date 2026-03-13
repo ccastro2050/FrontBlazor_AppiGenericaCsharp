@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @inject FrontBlazor_AppiGenericaCsharp.Services.ApiService Api
 @inject FrontBlazor_AppiGenericaCsharp.Services.SpService Sp
+@inject IJSRuntime JS
 @using System.Text.Json
 
 <PageTitle>Facturas</PageTitle>
@@ -392,6 +393,9 @@
     {
         int numero = int.TryParse(ObtenerValor(f, "numero"), out int n) ? n : 0;
 
+        var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de eliminar la Factura #{numero}?");
+        if (!confirmar) return;
+
         var parametros = new Dictionary<string, object?>
         {
             ["p_numero"] = numero,
@@ -437,6 +441,9 @@
 
         if (editando)
         {
+            var confirmar = await JS.InvokeAsync<bool>("confirm", $"¿Está seguro de actualizar la Factura #{numeroEditar}?");
+            if (!confirmar) return;
+
             var parametros = new Dictionary<string, object?>
             {
                 ["p_numero"] = numeroEditar,
