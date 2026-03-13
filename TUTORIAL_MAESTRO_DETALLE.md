@@ -28,6 +28,8 @@ Una relacion maestro-detalle conecta un registro principal (maestro) con multipl
 
 ### Ejemplos de Relaciones Maestro-Detalle
 
+**Ejemplos genericos:**
+
 | Maestro | Detalle | Descripcion |
 |---------|---------|-------------|
 | **Factura** | Productos por Factura | Cada factura tiene N productos con cantidad y subtotal |
@@ -35,8 +37,15 @@ Una relacion maestro-detalle conecta un registro principal (maestro) con multipl
 | Orden de Compra | Detalle de Compra | Cada orden tiene N materiales/servicios |
 | Receta Medica | Medicamentos | Cada receta tiene N medicamentos con dosis |
 | Matricula | Materias Inscritas | Cada matricula tiene N materias con horarios |
-| Orden de Trabajo | Tareas | Cada orden tiene N tareas asignadas |
-| Presupuesto | Partidas | Cada presupuesto tiene N partidas con montos |
+
+**Ejemplos reales del sistema (por modulo):**
+
+| Modulo | Maestro | Detalle | Descripcion |
+|--------|---------|---------|-------------|
+| **Gestion Profesoral** | Docente | Estudios Realizados | Cada docente tiene N estudios con titulo, universidad, tipo y pais |
+| **Innovacion Curricular** | Programa | Actividades Academicas | Cada programa tiene N actividades con creditos, horas e idioma |
+| **Investigacion** | Grupo de Investigacion | Semilleros | Cada grupo tiene N semilleros con fecha de fundacion |
+| **Mapa de Conocimiento** | Proyecto | Productos Academicos | Cada proyecto genera N productos con categoria y tipo |
 
 ### CRUD Simple vs Maestro-Detalle
 
@@ -1312,6 +1321,252 @@ private List<Dictionary<string, object?>> materiasDisponibles = new();
 private int campoEstudiante = 0;
 private string campoPeriodo = "2026-1";
 ```
+
+### Ejemplos Reales por Modulo (Bases de Datos del Sistema)
+
+A continuacion se presentan relaciones maestro-detalle reales identificadas en cada modulo del sistema. Cada ejemplo muestra la tabla maestra, la tabla detalle, las clases auxiliares necesarias y los SPs equivalentes.
+
+---
+
+#### Modulo: Gestion Profesoral (`gestion_profesoral`)
+
+**Relacion: Docente → Estudios Realizados**
+
+Un docente (maestro) posee multiples estudios realizados (detalle). Cada estudio tiene titulo, universidad, fecha, tipo, ciudad, pais, metodologia y perfil de egresado. Ademas, cada estudio puede tener apoyo profesoral (`apoyo_profesoral`) y beca (`beca`) como datos complementarios 1:1.
+
+```
+docente (cedula PK)
+   └── estudios_realizados (id PK, docente FK → docente.cedula)
+          ├── estudio_ac (N:N con area_conocimiento)
+          ├── apoyo_profesoral (1:1, estudios FK → estudios_realizados.id)
+          └── beca (1:1, estudios FK → estudios_realizados.id)
+```
+
+```csharp
+// Clase para la fila de detalle
+private class EstudioFila
+{
+    public string Titulo { get; set; } = "";
+    public string Universidad { get; set; } = "";
+    public string Tipo { get; set; } = "Pregrado";       // Pregrado, Maestria, Doctorado, etc.
+    public string Ciudad { get; set; } = "";
+    public string Pais { get; set; } = "Colombia";
+    public string Metodologia { get; set; } = "Presencial";
+    public DateTime Fecha { get; set; } = DateTime.Today;
+    public bool InsAcreditada { get; set; } = true;
+}
+
+// Variables del maestro
+private int campoCedula = 0;
+private string campoNombres = "";
+private string campoApellidos = "";
+private string campoEscalafon = "";
+private int campoLineaInvestigacion = 0;
+
+// FK: lineas de investigacion disponibles
+private List<Dictionary<string, object?>> lineasInvestigacion = new();
+```
+
+**SPs equivalentes:**
+
+| Factura (referencia) | Gestion Profesoral |
+|----------------------|-------------------|
+| `sp_listar_facturas_y_productosporfactura` | `sp_listar_docentes_y_estudios` |
+| `sp_consultar_factura_y_productosporfactura` | `sp_consultar_docente_y_estudios` |
+| `sp_insertar_factura_y_productosporfactura` | `sp_insertar_docente_y_estudios` |
+| `sp_actualizar_factura_y_productosporfactura` | `sp_actualizar_docente_y_estudios` |
+| `sp_borrar_factura_y_productosporfactura` | `sp_borrar_docente_y_estudios` |
+
+**Otra relacion del mismo modulo:** `docente` → `reconocimiento` (un docente tiene N reconocimientos con tipo, fecha, institucion, nombre, ambito). Tambien `docente` → `evaluacion_docente` (N evaluaciones con calificacion y semestre).
+
+---
+
+#### Modulo: Innovacion Curricular (`innovacion_curricular`)
+
+**Relacion: Programa → Actividades Academicas**
+
+Un programa academico (maestro) contiene multiples actividades academicas (detalle). Cada actividad tiene nombre, creditos, tipo, area de formacion, horas acompanadas, horas independientes, idioma y datos de curso espejo. A su vez, las actividades se asocian a registros calificados via la tabla puente `aa_rc`.
+
+```
+programa (id PK)
+   ├── activ_academica (id PK, disenio FK → programa.id)
+   ├── acreditacion (resolucion PK, programa FK)
+   ├── registro_calificado (codigo PK, programa FK)
+   │      └── aa_rc (N:N activ_academica ↔ registro_calificado)
+   ├── pasantia (id PK, programa FK)
+   └── premio (id PK, programa FK)
+```
+
+```csharp
+// Clase para la fila de detalle (actividad academica)
+private class ActividadFila
+{
+    public string Nombre { get; set; } = "";
+    public int NumCreditos { get; set; } = 3;
+    public string Tipo { get; set; } = "Obligatoria";    // Obligatoria, Electiva
+    public string AreaFormacion { get; set; } = "";
+    public int HAcom { get; set; } = 48;
+    public int HIndep { get; set; } = 96;
+    public string Idioma { get; set; } = "Espanol";
+    public bool Espejo { get; set; } = false;
+    public string EntidadEspejo { get; set; } = "";
+    public string PaisEspejo { get; set; } = "";
+}
+
+// Variables del maestro
+private int campoIdPrograma = 0;
+private string campoNombre = "";
+private string campoTipo = "";
+private string campoNivel = "";
+private int campoFacultad = 0;
+
+// FK: facultades disponibles (la facultad pertenece a una universidad)
+private List<Dictionary<string, object?>> facultades = new();
+private List<Dictionary<string, object?>> universidades = new();
+```
+
+**SPs equivalentes:**
+
+| Factura (referencia) | Innovacion Curricular |
+|----------------------|----------------------|
+| `sp_listar_facturas_y_productosporfactura` | `sp_listar_programas_y_actividades` |
+| `sp_consultar_factura_y_productosporfactura` | `sp_consultar_programa_y_actividades` |
+| `sp_insertar_factura_y_productosporfactura` | `sp_insertar_programa_y_actividades` |
+| `sp_actualizar_factura_y_productosporfactura` | `sp_actualizar_programa_y_actividades` |
+| `sp_borrar_factura_y_productosporfactura` | `sp_borrar_programa_y_actividades` |
+
+**Otra relacion del mismo modulo:** `registro_calificado` → `aa_rc` → `activ_academica` (un registro calificado contiene N actividades academicas, cada una con componente y semestre asignado). Tambien `programa` → `pasantia` (un programa tiene N pasantias con pais, empresa y descripcion).
+
+---
+
+#### Modulo: Investigacion (`investigacion`)
+
+**Relacion: Grupo de Investigacion → Semilleros**
+
+Un grupo de investigacion (maestro) contiene multiples semilleros (detalle). Cada semillero tiene nombre y fecha de fundacion. Los semilleros a su vez tienen docentes participantes (`participa_semillero`) y lineas de investigacion (`semillero_linea`).
+
+```
+grupo_investigacion (id PK, universidad FK)
+   ├── semillero (id PK, grupo_investigacion FK)
+   │      ├── participa_semillero (N:N docente ↔ semillero, con rol y fechas)
+   │      └── semillero_linea (N:N semillero ↔ linea_investigacion)
+   ├── participa_grupo (N:N docente ↔ grupo, con rol y fechas)
+   └── grupo_linea (N:N grupo ↔ linea_investigacion)
+```
+
+```csharp
+// Clase para la fila de detalle (semillero)
+private class SemilleroFila
+{
+    public string Nombre { get; set; } = "";
+    public DateTime FechaFundacion { get; set; } = DateTime.Today;
+}
+
+// Variables del maestro
+private int campoIdGrupo = 0;
+private string campoNombreGrupo = "";
+private string campoUrlGruplac = "";
+private string campoCategoria = "";
+private string campoAmbito = "Nacional";
+private DateTime campoFechaFundacion = DateTime.Today;
+private int campoUniversidad = 0;
+private bool campoInterno = true;
+
+// FK: universidades disponibles
+private List<Dictionary<string, object?>> universidades = new();
+```
+
+**SPs equivalentes:**
+
+| Factura (referencia) | Investigacion |
+|----------------------|--------------|
+| `sp_listar_facturas_y_productosporfactura` | `sp_listar_grupos_y_semilleros` |
+| `sp_consultar_factura_y_productosporfactura` | `sp_consultar_grupo_y_semilleros` |
+| `sp_insertar_factura_y_productosporfactura` | `sp_insertar_grupo_y_semilleros` |
+| `sp_actualizar_factura_y_productosporfactura` | `sp_actualizar_grupo_y_semilleros` |
+| `sp_borrar_factura_y_productosporfactura` | `sp_borrar_grupo_y_semilleros` |
+
+**Otra relacion del mismo modulo:** `semillero` → `participa_semillero` (un semillero tiene N docentes participantes, cada uno con rol, fecha de inicio y fecha de fin). Este es un caso de maestro-detalle donde el detalle es una **tabla puente con atributos propios** (no solo FKs sino tambien `rol`, `fecha_inicio`, `fecha_fin`).
+
+---
+
+#### Modulo: Mapa de Conocimiento (`mapa_conocimiento`)
+
+**Relacion: Proyecto → Productos**
+
+Un proyecto de investigacion (maestro) genera multiples productos academicos (detalle). Cada producto tiene nombre, categoria, fecha de entrega y tipo de producto (FK a `tipo_producto`). Ademas, cada proyecto tiene docentes que lo desarrollan (`desarrolla`) con rol y descripcion, aliados (`aliado_proyecto`), palabras clave (`palabras_clave`), areas de conocimiento, lineas de investigacion, ODS y areas de aplicacion.
+
+```
+proyecto (id PK)
+   ├── producto (id PK, proyecto FK, tipo_producto FK)
+   │      └── docente_producto (N:N docente ↔ producto)
+   ├── desarrolla (N:N docente ↔ proyecto, con rol y descripcion)
+   ├── aliado_proyecto (N:N aliado ↔ proyecto)
+   ├── palabras_clave (N:N proyecto ↔ termino_clave)
+   ├── ac_proyecto (N:N proyecto ↔ area_conocimiento)
+   ├── proyecto_linea (N:N proyecto ↔ linea_investigacion)
+   ├── ods_proyecto (N:N proyecto ↔ objetivo_desarrollo_sostenible)
+   └── aa_proyecto (N:N proyecto ↔ area_aplicacion)
+```
+
+```csharp
+// Clase para la fila de detalle (producto academico)
+private class ProductoAcademicoFila
+{
+    public string Nombre { get; set; } = "";
+    public string Categoria { get; set; } = "";
+    public DateTime FechaEntrega { get; set; } = DateTime.Today;
+    public int TipoProducto { get; set; } = 0;   // FK a tipo_producto
+}
+
+// Variables del maestro
+private int campoIdProyecto = 0;
+private string campoTitulo = "";
+private string campoResumen = "";
+private double campoPresupuesto = 0;
+private string campoTipoFinanciacion = "";
+private string campoTipoFondos = "";
+private DateTime campoFechaInicio = DateTime.Today;
+private DateTime? campoFechaFin;
+
+// FKs: tipos de producto y docentes disponibles
+private List<Dictionary<string, object?>> tiposProducto = new();
+private List<Dictionary<string, object?>> docentes = new();
+```
+
+**SPs equivalentes:**
+
+| Factura (referencia) | Mapa de Conocimiento |
+|----------------------|---------------------|
+| `sp_listar_facturas_y_productosporfactura` | `sp_listar_proyectos_y_productos` |
+| `sp_consultar_factura_y_productosporfactura` | `sp_consultar_proyecto_y_productos` |
+| `sp_insertar_factura_y_productosporfactura` | `sp_insertar_proyecto_y_productos` |
+| `sp_actualizar_factura_y_productosporfactura` | `sp_actualizar_proyecto_y_productos` |
+| `sp_borrar_factura_y_productosporfactura` | `sp_borrar_proyecto_y_productos` |
+
+**Otra relacion del mismo modulo:** `proyecto` → `desarrolla` (un proyecto tiene N docentes investigadores, cada uno con rol y descripcion de su participacion). Este es otro caso de tabla puente con atributos propios, similar a `participa_semillero` del modulo Investigacion.
+
+---
+
+### Resumen Comparativo de los 5 Modulos
+
+| Modulo | BD | Maestro | Detalle | FKs del Maestro | Campos del Detalle |
+|--------|-----|---------|---------|-----------------|-------------------|
+| **Facturas** | `facturas_db` | `factura` | `productosporfactura` | cliente, vendedor | codigoproducto, cantidad, valorunitario, subtotal |
+| **Gestion Profesoral** | `gestion_profesoral` | `docente` | `estudios_realizados` | linea_investigacion | titulo, universidad, tipo, ciudad, pais, metodologia |
+| **Innovacion Curricular** | `innovacion_curricular` | `programa` | `activ_academica` | facultad | nombre, creditos, tipo, area_formacion, horas, idioma |
+| **Investigacion** | `investigacion` | `grupo_investigacion` | `semillero` | universidad | nombre, fecha_fundacion |
+| **Mapa de Conocimiento** | `mapa_conocimiento` | `proyecto` | `producto` | (ninguna directa) | nombre, categoria, fecha_entrega, tipo_producto FK |
+
+### Patron Comun en Todos los Modulos
+
+Todos los modulos comparten el mismo patron de implementacion:
+
+1. **Vista "listar"** → Tabla con columnas del maestro + conteo de detalles (`productos.Count`, `estudios.Count`, etc.)
+2. **Vista "ver"** → Card con datos del maestro + tabla anidada con los registros de detalle
+3. **Vista "formulario"** → Campos del maestro + filas dinamicas (`List<TFila>`) para el detalle
+4. **SPs** → 5 stored procedures (listar, consultar, insertar, actualizar, borrar) que manejan maestro + detalle en una sola transaccion
+5. **JSON como puente** → El detalle se serializa a JSON para enviarlo al SP y se parsea desde JSON al recibirlo
 
 ### Tabla de Adaptacion
 
